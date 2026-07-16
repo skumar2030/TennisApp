@@ -400,6 +400,62 @@ router.post('/room/:roomId/start', (req, res) => {
   res.json({ room: sanitizeRoom(room, userId) })
 })
 
+// POST /api/wordle/room/:roomId/end — host ends the game early
+router.post('/room/:roomId/end', (req, res) => {
+  const { roomId } = req.params
+  const { userId } = req.body
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' })
+  }
+
+  const room = rooms.get(roomId)
+  if (!room) return res.status(404).json({ error: 'Room not found' })
+
+  if (room.createdBy !== userId) {
+    return res.status(403).json({ error: 'Only the room creator can end the game' })
+  }
+
+  if (room.status === 'finished') {
+    return res.status(400).json({ error: 'Game has already ended' })
+  }
+
+  // Force finish — set startedAt so elapsed >= duration
+  if (!room.startedAt) room.startedAt = Date.now()
+  room.duration = 0
+  room.status = 'finished'
+
+  // Record stats
+  for (const [uid, p] of Object.entries(room.players)) {
+    const stats = getOrCreateStats(uid)
+    stats.userName = p.userName
+    stats.totalGames++
+    stats.totalWords += p.wordsFound.length
+    stats.totalScore += p.score
+    if (p.score > stats.bestScore) stats.bestScore = p.score
+    if (p.wordsFound.length > stats.bestWords) stats.bestWords = p.wordsFound.length
+    const longest = p.wordsFound.reduce((a, b) => b.word.length > a.length ? b.word : a, stats.longestWord)
+    if (longest.length > stats.longestWord.length) stats.longestWord = longest
+
+    boggleHistory.push({
+      userId: uid,
+      userName: p.userName,
+      roomId,
+      wordsFound: p.wordsFound.length,
+      score: p.score,
+      totalPossible: room.solutions.length,
+      completedAt: new Date().toISOString(),
+    })
+  }
+
+  res.json({
+    room: sanitizeRoom(room, userId),
+    solutions: room.solutions.map(s => ({ word: s.word, path: s.path, points: scoreWord(s.word) })),
+    allPlayersWords: Object.entries(room.players).map(([uid, p]) => ({
+      userId: uid, userName: p.userName, wordsFound: p.wordsFound, score: p.score,
+    })),
+  })
+})
+
 // POST /api/wordle/room/:roomId/submit — submit a found word
 router.post('/room/:roomId/submit', (req, res) => {
   const { roomId } = req.params

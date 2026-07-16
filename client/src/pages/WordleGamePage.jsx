@@ -175,6 +175,17 @@ export default function WordleGamePage() {
     }
   }
 
+  const handleEndGame = async () => {
+    try {
+      const { data } = await axios.post(`/api/wordle/room/${roomId}/end`, { userId })
+      setRoom(data.room)
+      if (data.solutions) setSolutions(data.solutions)
+      if (data.allPlayersWords) setAllPlayersWords(data.allPlayersWords)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to end game')
+    }
+  }
+
   const handleCopyRoomCode = () => {
     navigator.clipboard.writeText(roomId)
     setCopied(true)
@@ -308,6 +319,18 @@ export default function WordleGamePage() {
           <p className="text-xl font-black text-yellow-300">{myPlayer?.score || 0}</p>
         </div>
       </div>
+      )}
+
+      {/* End Game (host only) */}
+      {!isWaiting && !isFinished && isCreator && (
+        <div className="flex justify-end">
+          <button
+            onClick={handleEndGame}
+            className="text-xs font-medium text-red-500 hover:text-red-700 border border-red-300 hover:border-red-500 rounded-lg px-3 py-1.5 transition-colors"
+          >
+            End Game
+          </button>
+        </div>
       )}
 
       {/* Other Players */}
