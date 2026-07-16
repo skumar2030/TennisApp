@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./tennis.db"
+}
+
+model Player {
+  id         Int      @id @default(autoincrement())
+  name       String
+  ustaRating String
+  phone      String?
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  matchPlayers   MatchPlayer[]
+  expensesPaid   Expense[]      @relation("PaidBy")
+  expenseSplits  ExpenseSplit[]
+}
+
+model Match {
+  id        Int      @id @default(autoincrement())
+  dateTime  DateTime
+  location  String
+  matchType String   // "singles" | "doubles"
+  status    String   @default("scheduled") // "scheduled" | "completed" | "cancelled"
+  winner    String?  // "team1" | "team2" | "tie"
+  notes     String?
+  createdAt DateTime @default(now())
+
+  matchPlayers  MatchPlayer[]
+  scores        Score[]
+  expenses      Expense[]
+  points        Point[]
+  matchComments MatchComment[]
+}
+
+model MatchPlayer {
+  id       Int    @id @default(autoincrement())
+  matchId  Int
+  playerId Int?   // nullable for TBD opponents
+  team     Int    // 1 or 2
+  role     String // "player1" | "player2"
+  tbdName  String? // optional name for TBD opponents
+
+  match  Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player? @relation(fields: [playerId], references: [id])
+}
+
+model Score {
+  id         Int    @id @default(autoincrement())
+  matchId    Int
+  setNumber  Int
+  team1Games Int
+  team2Games Int
+  tiebreak   String?
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
+
+model Expense {
+  id              Int      @id @default(autoincrement())
+  date            DateTime
+  category        String   // "match_fee" | "court_rental" | "equipment" | "strings" | "footwear" | "coaching" | "apparel" | "other"
+  amount          Float
+  paidById        Int
+  matchId         Int?
+  notes           String?
+  createdByUserId String   // Auth0 user ID (sub) of the user who created this expense
+  createdAt       DateTime @default(now())
+
+  paidBy  Player        @relation("PaidBy", fields: [paidById], references: [id])
+  match   Match?        @relation(fields: [matchId], references: [id])
+  splits  ExpenseSplit[]
+}
+
+model ExpenseSplit {
+  id          Int   @id @default(autoincrement())
+  expenseId   Int
+  playerId    Int
+  shareAmount Float
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  player  Player  @relation(fields: [playerId], references: [id])
+}
+
+model Point {
+  id          Int      @id @default(autoincrement())
+  matchId     Int
+  setNumber   Int
+  gameNumber  Int
+  pointNumber Int
+  serverId    Int      // which team is serving: 1 or 2
+  winner      Int      // which team won the point: 1 or 2
+  outcome     String   // ace, winner, forced_error, unforced_error, return_error, double_fault, other
+  shotType    String?  // forehand, backhand, serve, volley, overhead, drop_shot, lob
+  direction   String?  // down_the_line, cross_court, inside_out, inside_in, middle
+  serveType   String?  // first, second
+  serveIn     Boolean? // was the serve in
+  rallyCount  Int?
+  comment     String?
+  createdAt   DateTime @default(now())
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
+
+model MatchComment {
+  id        Int      @id @default(autoincrement())
+  matchId   Int
+  scope     String   // match, set, game
+  setNumber Int?
+  gameNumber Int?
+  comment   String
+  createdAt DateTime @default(now())
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
