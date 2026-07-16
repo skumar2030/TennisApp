@@ -250,19 +250,21 @@ function sanitizeRoom(room, requesterId) {
   }))
 
   // Time remaining
-  const elapsed = Date.now() - room.startedAt
-  const remaining = Math.max(0, room.duration - elapsed)
+  const elapsed = room.startedAt ? Date.now() - room.startedAt : 0
+  const remaining = room.startedAt ? Math.max(0, room.duration - elapsed) : room.duration
 
   return {
     roomId: room.roomId,
-    grid: room.grid,
+    grid: room.status === 'waiting' ? null : room.grid,
     gridSize: GRID_SIZE,
     duration: room.duration,
     timeRemaining: remaining,
     startedAt: room.startedAt,
     players,
-    status: remaining <= 0 ? 'finished' : room.status,
-    totalWords: room.status === 'finished' || remaining <= 0 ? room.solutions.length : undefined,
+    status: room.startedAt && remaining <= 0 ? 'finished' : room.status,
+    totalWords: room.status === 'finished' || (room.startedAt && remaining <= 0) ? room.solutions.length : undefined,
+    createdBy: room.createdBy,
+    createdByName: room.createdByName,
     createdAt: room.createdAt,
   }
 }
@@ -273,14 +275,16 @@ function sanitizeRoom(room, requesterId) {
 router.get('/config', (req, res) => {
   const activeRooms = []
   for (const [, room] of rooms) {
-    const elapsed = Date.now() - room.startedAt
-    const remaining = room.duration - elapsed
-    if (remaining > 0 && room.status !== 'finished') {
+    if (room.status === 'finished') continue
+    const elapsed = room.startedAt ? Date.now() - room.startedAt : 0
+    const remaining = room.startedAt ? room.duration - elapsed : room.duration
+    if (room.status === 'waiting' || remaining > 0) {
       activeRooms.push({
         roomId: room.roomId,
         playerCount: Object.keys(room.players).length,
         duration: room.duration,
         timeRemaining: remaining,
+        status: room.status,
         createdByName: room.createdByName,
         createdAt: room.createdAt,
       })
@@ -313,7 +317,7 @@ router.post('/room', (req, res) => {
     grid,
     solutions,
     duration: dur * 1000,
-    startedAt: Date.now(),
+    startedAt: null,
     players: {
       [userId]: {
         userName,
@@ -322,7 +326,7 @@ router.post('/room', (req, res) => {
         joinedAt: Date.now(),
       },
     },
-    status: 'playing',
+    status: 'waiting',
     createdBy: userId,
     createdByName: userName,
     createdAt: Date.now(),
@@ -348,9 +352,15 @@ router.post('/room/:roomId/join', (req, res) => {
   const room = rooms.get(roomId)
   if (!room) return res.status(404).json({ error: 'Room not found' })
 
-  const elapsed = Date.now() - room.startedAt
-  if (elapsed >= room.duration) {
+  if (room.status === 'finished') {
     return res.status(400).json({ error: 'This game has already ended' })
+  }
+
+  if (room.status === 'playing') {
+    const elapsed = Date.now() - room.startedAt
+    if (elapsed >= room.duration) {
+      return res.status(400).json({ error: 'This game has already ended' })
+    }
   }
 
   if (!room.players[userId]) {
@@ -365,6 +375,31 @@ router.post('/room/:roomId/join', (req, res) => {
   res.json({ room: sanitizeRoom(room, userId) })
 })
 
+// POST /api/wordle/room/:roomId/start — creator starts the game
+router.post('/room/:roomId/start', (req, res) => {
+  const { roomId } = req.params
+  const { userId } = req.body
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required' })
+  }
+
+  const room = rooms.get(roomId)
+  if (!room) return res.status(404).json({ error: 'Room not found' })
+
+  if (room.createdBy !== userId) {
+    return res.status(403).json({ error: 'Only the room creator can start the game' })
+  }
+
+  if (room.status !== 'waiting') {
+    return res.status(400).json({ error: 'Game has already started' })
+  }
+
+  room.status = 'playing'
+  room.startedAt = Date.now()
+
+  res.json({ room: sanitizeRoom(room, userId) })
+})
+
 // POST /api/wordle/room/:roomId/submit — submit a found word
 router.post('/room/:roomId/submit', (req, res) => {
   const { roomId } = req.params
@@ -375,6 +410,10 @@ router.post('/room/:roomId/submit', (req, res) => {
 
   const room = rooms.get(roomId)
   if (!room) return res.status(404).json({ error: 'Room not found' })
+
+  if (room.status === 'waiting') {
+    return res.status(400).json({ error: 'Game has not started yet' })
+  }
 
   // Check time
   const elapsed = Date.now() - room.startedAt
@@ -448,8 +487,8 @@ router.get('/room/:roomId', (req, res) => {
   const room = rooms.get(roomId)
   if (!room) return res.status(404).json({ error: 'Room not found' })
 
-  const elapsed = Date.now() - room.startedAt
-  const isFinished = elapsed >= room.duration
+  const elapsed = room.startedAt ? Date.now() - room.startedAt : 0
+  const isFinished = room.startedAt ? elapsed >= room.duration : false
 
   // If just finished, record stats
   if (isFinished && room.status !== 'finished') {

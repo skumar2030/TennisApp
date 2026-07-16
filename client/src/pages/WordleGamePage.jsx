@@ -65,7 +65,9 @@ export default function WordleGamePage() {
     return () => clearInterval(interval)
   }, [room?.startedAt, room?.duration])
 
-  const isFinished = room?.status === 'finished' || (timeLeft !== null && timeLeft <= 0)
+  const isWaiting = room?.status === 'waiting'
+  const isCreator = room?.createdBy === userId
+  const isFinished = room?.status === 'finished' || (!isWaiting && timeLeft !== null && timeLeft <= 0)
   const myPlayer = room?.players?.find(p => p.isYou)
   const otherPlayers = room?.players?.filter(p => !p.isYou) || []
   const myFoundWords = myPlayer?.foundWords || []
@@ -164,6 +166,15 @@ export default function WordleGamePage() {
     }
   }
 
+  const handleStartGame = async () => {
+    try {
+      const { data } = await axios.post(`/api/wordle/room/${roomId}/start`, { userId })
+      setRoom(data.room)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to start game')
+    }
+  }
+
   const handleCopyRoomCode = () => {
     navigator.clipboard.writeText(roomId)
     setCopied(true)
@@ -228,7 +239,60 @@ export default function WordleGamePage() {
         </div>
       )}
 
+      {/* Waiting Room */}
+      {isWaiting && (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-5">
+          <div className="text-center">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Room Code</p>
+            <button
+              onClick={handleCopyRoomCode}
+              className="text-3xl font-black tracking-widest text-green-700 hover:text-green-800 mt-1"
+            >
+              {roomId}
+            </button>
+            <p className="text-xs text-gray-400 mt-1">{copied ? 'Copied!' : 'Click to copy — share with friends'}</p>
+          </div>
+
+          <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+              Players ({room?.players?.length || 1})
+            </p>
+            <div className="space-y-2">
+              {room?.players?.map(p => (
+                <div key={p.userId} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2">
+                  <div className="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-xs font-bold">
+                    {p.userName?.charAt(0)?.toUpperCase() || '?'}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{p.userName}</span>
+                  {p.userId === room?.createdBy && (
+                    <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium ml-auto">Host</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-center pt-2">
+            <p className="text-xs text-gray-400 mb-1">Duration: {Math.round(room.duration / 1000 / 60)} min</p>
+          </div>
+
+          {isCreator ? (
+            <button
+              onClick={handleStartGame}
+              className="w-full bg-green-700 hover:bg-green-800 text-white rounded-xl py-3 text-sm font-bold transition-all active:scale-[0.98] shadow-md"
+            >
+              Start Game
+            </button>
+          ) : (
+            <div className="text-center">
+              <p className="text-sm text-gray-500 dark:text-gray-400 animate-pulse">Waiting for host to start the game...</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Timer + Score Bar */}
+      {!isWaiting && (
       <div className="flex items-center justify-between bg-gray-800 text-white rounded-xl px-4 py-3">
         <div className="text-center">
           <p className="text-xs text-gray-400">Words</p>
@@ -244,9 +308,10 @@ export default function WordleGamePage() {
           <p className="text-xl font-black text-yellow-300">{myPlayer?.score || 0}</p>
         </div>
       </div>
+      )}
 
       {/* Other Players */}
-      {otherPlayers.length > 0 && (
+      {!isWaiting && otherPlayers.length > 0 && (
         <div className="flex flex-wrap gap-2 justify-center">
           {otherPlayers.map(p => (
             <div key={p.userId} className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
@@ -258,6 +323,7 @@ export default function WordleGamePage() {
       )}
 
       {/* Current word being formed */}
+      {!isWaiting && (
       <div className="h-10 flex items-center justify-center">
         {currentWord ? (
           <div className={`text-xl font-black tracking-widest px-4 py-1 rounded-lg ${
@@ -273,9 +339,10 @@ export default function WordleGamePage() {
           <p className="text-xs text-gray-400">Drag across letters to form tennis words</p>
         ) : null}
       </div>
+      )}
 
       {/* Grid */}
-      <div
+      {!isWaiting && <div
         ref={gridRef}
         className="relative mx-auto"
         style={{ width: 'fit-content', touchAction: 'none' }}
@@ -337,10 +404,10 @@ export default function WordleGamePage() {
             })
           )}
         </div>
-      </div>
+      </div>}
 
       {/* Scoring guide */}
-      {!isFinished && (
+      {!isFinished && !isWaiting && (
         <div className="flex justify-center gap-3 text-xs text-gray-400">
           <span>3L = 1pt</span>
           <span>4L = 2pt</span>
@@ -351,7 +418,7 @@ export default function WordleGamePage() {
       )}
 
       {/* Found Words List */}
-      {!isFinished && myFoundWords.length > 0 && (
+      {!isFinished && !isWaiting && myFoundWords.length > 0 && (
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-3">
           <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Your Words ({myFoundWords.length})</p>
           <div className="flex flex-wrap gap-1.5">

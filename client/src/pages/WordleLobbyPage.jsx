@@ -195,7 +195,11 @@ export default function WordleLobbyPage() {
                   <span className="font-mono font-bold text-sm bg-gray-200 px-2 py-1 rounded">{room.roomId}</span>
                   <div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-200">by {room.createdByName}</span>
-                    <span className="text-xs text-gray-400 ml-2">{formatTime(room.timeRemaining)} left</span>
+                    {room.status === 'waiting' ? (
+                      <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium ml-2">Waiting</span>
+                    ) : (
+                      <span className="text-xs text-gray-400 ml-2">{formatTime(room.timeRemaining)} left</span>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
