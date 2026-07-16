@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import MyColleges from '../components/MyColleges'
 
 const TABS = [
   { id: 'players', label: 'Featured Players' },
   { id: 'resources', label: 'College Resources' },
   { id: 'college', label: 'College Path' },
+  { id: 'mycolleges', label: 'My Colleges' },
   { id: 'pro', label: 'Pro Journey' },
 ]
 
@@ -710,6 +712,9 @@ export default function DashboardPage() {
           <CollegeTimeline />
         </div>
       )}
+
+      {/* Tab: My Colleges */}
+      {activeTab === 'mycolleges' && <MyColleges />}
 
       {/* Tab: Pro Journey */}
       {activeTab === 'pro' && (
