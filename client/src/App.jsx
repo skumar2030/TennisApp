@@ -21,8 +21,8 @@ import WordleGamePage from './pages/WordleGamePage'
 import WordleLeaderboardPage from './pages/WordleLeaderboardPage'
 import AuthAxios from './auth/AuthAxios'
 
-const AUTH0_DOMAIN = 'dev-y8cbnyejlrsean26.us.auth0.com'
-const AUTH0_CLIENT_ID = 'uCqCn4CeOf0MckCs1YqAbLmcA0dOkizp'
+const AUTH0_DOMAIN = import.meta.env.VITE_AUTH0_DOMAIN
+const AUTH0_CLIENT_ID = import.meta.env.VITE_AUTH0_CLIENT_ID
 const AUTH0_CALLBACK_URL = window.location.origin + '/login/callback'
 
 function NavItem({ to, label }) {
