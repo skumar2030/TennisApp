@@ -197,18 +197,71 @@ function ProtectedRoute({ children }) {
   return children
 }
 
+function MobileNavItem({ to, label, icon, onClick }) {
+  return (
+    <NavLink
+      to={to}
+      onClick={onClick}
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors ${
+          isActive
+            ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-l-3 border-green-600'
+            : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700'
+        }`
+      }
+    >
+      {icon}
+      {label}
+    </NavLink>
+  )
+}
+
 function Layout({ children }) {
   const { isAuthenticated, user } = useAuth0()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const isVerified = isAuthenticated && user?.email_verified
+
+  const closeMenu = () => setMobileMenuOpen(false)
+
+  // Nav icons
+  const icons = {
+    dashboard: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+    players: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+    schedule: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+    history: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    expenses: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    summary: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+    news: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>,
+    play4fun: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    leaderboard: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-6">
-          <NavLink to="/" className="text-xl font-bold text-green-700 dark:text-green-400 tracking-tight shrink-0">
+      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-4">
+          {/* Hamburger - mobile only */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-1.5 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            {mobileMenuOpen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+
+          <NavLink to="/" onClick={closeMenu} className="text-xl font-bold text-green-700 dark:text-green-400 tracking-tight shrink-0">
             TennisApp
           </NavLink>
-          <nav className="flex flex-wrap gap-1">
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex flex-wrap gap-1">
             <NavItem to="/" label="Dashboard" />
             {isVerified && (
               <>
@@ -225,9 +278,48 @@ function Layout({ children }) {
             )}
             <NavItem to="/play4fun/leaderboard" label="Leaderboard" />
           </nav>
+
           <AuthButtons />
         </div>
+
+        {/* Mobile menu drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 max-h-[70vh] overflow-y-auto">
+            <div className="py-2">
+              <MobileNavItem to="/" label="Dashboard" icon={icons.dashboard} onClick={closeMenu} />
+              {isVerified && (
+                <>
+                  <div className="px-4 pt-3 pb-1">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Manage</p>
+                  </div>
+                  <MobileNavItem to="/players" label="Players" icon={icons.players} onClick={closeMenu} />
+                  <MobileNavItem to="/schedule" label="Schedule" icon={icons.schedule} onClick={closeMenu} />
+                  <MobileNavItem to="/history" label="Match History" icon={icons.history} onClick={closeMenu} />
+                  <MobileNavItem to="/expenses" label="Expenses" icon={icons.expenses} onClick={closeMenu} />
+                  <MobileNavItem to="/expenses/summary" label="Summary" icon={icons.summary} onClick={closeMenu} />
+                </>
+              )}
+              <div className="px-4 pt-3 pb-1">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Explore</p>
+              </div>
+              <MobileNavItem to="/news" label="News" icon={icons.news} onClick={closeMenu} />
+              {isVerified && (
+                <MobileNavItem to="/play4fun" label="Play4Fun" icon={icons.play4fun} onClick={closeMenu} />
+              )}
+              <MobileNavItem to="/play4fun/leaderboard" label="Leaderboard" icon={icons.leaderboard} onClick={closeMenu} />
+            </div>
+          </div>
+        )}
       </header>
+
+      {/* Backdrop overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-30 md:hidden"
+          onClick={closeMenu}
+        />
+      )}
+
       <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
     </div>
   )
