@@ -178,7 +178,6 @@ function UserProfileProvider({ children }) {
   const refreshProfile = () => setRefreshKey(k => k + 1)
 
   useEffect(() => {
-    console.log('[UserProfile] effect:', { authLoading, isAuthenticated, sub: user?.sub })
     if (authLoading) return
 
     if (!isAuthenticated || !user?.sub) {
@@ -189,14 +188,10 @@ function UserProfileProvider({ children }) {
 
     let cancelled = false
     const fetchProfile = async () => {
-      const url = `/api/user-profiles/me/${encodeURIComponent(user.sub)}`
-      console.log('[UserProfile] fetching:', url)
       try {
-        const res = await axios.get(url)
-        console.log('[UserProfile] response:', res.data)
+        const res = await axios.get(`/api/user-profiles/me/${encodeURIComponent(user.sub)}`)
         if (!cancelled) setProfile(res.data) // null if not registered
-      } catch (err) {
-        console.error('[UserProfile] fetch error:', err.message, err.response?.status)
+      } catch {
         if (!cancelled) setProfile(null)
       } finally {
         if (!cancelled) setProfileLoading(false)
