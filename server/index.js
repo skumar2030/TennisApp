@@ -10,6 +10,7 @@ const newsRouter = require('./routes/news');
 const quizRouter = require('./routes/quiz');
 const wordleRouter = require('./routes/wordle');
 const collegesRouter = require('./routes/colleges');
+const userProfilesRouter = require('./routes/userProfiles');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -32,6 +33,7 @@ app.use('/api/news', newsRouter);
 app.use('/api/quiz', quizRouter);
 app.use('/api/wordle', wordleRouter);
 app.use('/api/colleges', collegesRouter);
+app.use('/api/user-profiles', userProfilesRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });

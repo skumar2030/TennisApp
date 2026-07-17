@@ -1,8 +1,9 @@
-import { useState, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense, createContext, useContext } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom'
 import { Auth0Provider, useAuth0 } from '@auth0/auth0-react'
 import { ThemeProvider, useTheme } from './ThemeContext'
 import AuthAxios from './auth/AuthAxios'
+import axios from 'axios'
 
 // Lazy-loaded pages for code splitting
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
@@ -23,6 +24,13 @@ const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
 const WordleLobbyPage = lazy(() => import('./pages/WordleLobbyPage'))
 const WordleGamePage = lazy(() => import('./pages/WordleGamePage'))
 const WordleLeaderboardPage = lazy(() => import('./pages/WordleLeaderboardPage'))
+const RegisterPage = lazy(() => import('./pages/RegisterPage'))
+const AdminPage = lazy(() => import('./pages/AdminPage'))
+const RegistrationStatusPage = lazy(() => import('./pages/RegistrationStatusPage'))
+
+// User profile context — shares profile state across the app
+const UserProfileContext = createContext(null)
+export function useUserProfile() { return useContext(UserProfileContext) }
 
 function PageLoader() {
   return (
@@ -160,10 +168,48 @@ function AuthButtons() {
   )
 }
 
-function ProtectedRoute({ children }) {
-  const { isAuthenticated, isLoading, loginWithRedirect, user, logout } = useAuth0()
+function UserProfileProvider({ children }) {
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth0()
+  const [profile, setProfile] = useState(null)
+  const [profileLoading, setProfileLoading] = useState(true)
 
-  if (isLoading) {
+  const fetchProfile = async () => {
+    if (!isAuthenticated || !user?.sub) {
+      setProfile(null)
+      setProfileLoading(false)
+      return
+    }
+    try {
+      const res = await axios.get(`/api/user-profiles/me/${encodeURIComponent(user.sub)}`)
+      setProfile(res.data) // null if not registered
+    } catch {
+      setProfile(null)
+    } finally {
+      setProfileLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!authLoading) fetchProfile()
+  }, [isAuthenticated, user?.sub, authLoading])
+
+  const refreshProfile = () => {
+    setProfileLoading(true)
+    fetchProfile()
+  }
+
+  return (
+    <UserProfileContext.Provider value={{ profile, profileLoading, refreshProfile }}>
+      {children}
+    </UserProfileContext.Provider>
+  )
+}
+
+function ProtectedRoute({ children, requireApproved = true }) {
+  const { isAuthenticated, isLoading, loginWithRedirect, user, logout } = useAuth0()
+  const { profile, profileLoading } = useUserProfile()
+
+  if (isLoading || profileLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <p className="text-gray-500 dark:text-gray-400 text-sm">Loading...</p>
@@ -208,6 +254,38 @@ function ProtectedRoute({ children }) {
     )
   }
 
+  // No profile yet — show registration
+  if (!profile) {
+    return <RegisterPage onRegistered={() => window.location.reload()} />
+  }
+
+  // Pending or rejected — show status page
+  if (requireApproved && profile.status === 'pending') {
+    return <RegistrationStatusPage status="pending" />
+  }
+  if (requireApproved && profile.status === 'rejected') {
+    return <RegistrationStatusPage status="rejected" rejectionReason={profile.rejectionReason} />
+  }
+
+  return children
+}
+
+function AdminRoute({ children }) {
+  const { profile, profileLoading } = useUserProfile()
+  const { isLoading } = useAuth0()
+
+  if (isLoading || profileLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Loading...</p>
+      </div>
+    )
+  }
+
+  if (!profile || profile.role !== 'admin') {
+    return <Navigate to="/" replace />
+  }
+
   return children
 }
 
@@ -232,8 +310,23 @@ function MobileNavItem({ to, label, icon, onClick }) {
 
 function Layout({ children }) {
   const { isAuthenticated, user } = useAuth0()
+  const { profile, profileLoading, refreshProfile } = useUserProfile()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const isVerified = isAuthenticated && user?.email_verified
+  const isApproved = isVerified && profile?.status === 'approved'
+  const isAdmin = isApproved && profile?.role === 'admin'
+
+  // If authenticated + verified but no profile yet → show registration
+  if (isVerified && !profileLoading && !profile) {
+    return <RegisterPage onRegistered={refreshProfile} />
+  }
+  // If profile exists but not approved → show status page
+  if (isVerified && !profileLoading && profile && profile.status === 'pending') {
+    return <RegistrationStatusPage status="pending" />
+  }
+  if (isVerified && !profileLoading && profile && profile.status === 'rejected') {
+    return <RegistrationStatusPage status="rejected" rejectionReason={profile.rejectionReason} />
+  }
 
   const closeMenu = () => setMobileMenuOpen(false)
 
@@ -277,7 +370,7 @@ function Layout({ children }) {
           {/* Desktop nav */}
           <nav className="hidden md:flex flex-wrap gap-1">
             <NavItem to="/" label="Dashboard" />
-            {isVerified && (
+            {isApproved && (
               <>
                 <NavItem to="/players" label="Players" />
                 <NavItem to="/schedule" label="Schedule" />
@@ -287,10 +380,13 @@ function Layout({ children }) {
               </>
             )}
             <NavItem to="/news" label="News" />
-            {isVerified && (
+            {isApproved && (
               <NavItem to="/play4fun" label="Play4Fun" />
             )}
             <NavItem to="/play4fun/leaderboard" label="Leaderboard" />
+            {isAdmin && (
+              <NavItem to="/admin" label="Admin" />
+            )}
           </nav>
 
           <AuthButtons />
@@ -301,7 +397,7 @@ function Layout({ children }) {
           <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 max-h-[70vh] overflow-y-auto">
             <div className="py-2">
               <MobileNavItem to="/" label="Dashboard" icon={icons.dashboard} onClick={closeMenu} />
-              {isVerified && (
+              {isApproved && (
                 <>
                   <div className="px-4 pt-3 pb-1">
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Manage</p>
@@ -317,10 +413,18 @@ function Layout({ children }) {
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Explore</p>
               </div>
               <MobileNavItem to="/news" label="News" icon={icons.news} onClick={closeMenu} />
-              {isVerified && (
+              {isApproved && (
                 <MobileNavItem to="/play4fun" label="Play4Fun" icon={icons.play4fun} onClick={closeMenu} />
               )}
               <MobileNavItem to="/play4fun/leaderboard" label="Leaderboard" icon={icons.leaderboard} onClick={closeMenu} />
+              {isAdmin && (
+                <>
+                  <div className="px-4 pt-3 pb-1">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Admin</p>
+                  </div>
+                  <MobileNavItem to="/admin" label="Admin Dashboard" icon={icons.leaderboard} onClick={closeMenu} />
+                </>
+              )}
             </div>
           </div>
         )}
@@ -394,6 +498,9 @@ function AppRoutes() {
       <Route path="/play4fun/wordle" element={<Layout><ProtectedRoute><WordleLobbyPage /></ProtectedRoute></Layout>} />
       <Route path="/play4fun/wordle/:roomId" element={<Layout><ProtectedRoute><WordleGamePage /></ProtectedRoute></Layout>} />
       <Route path="/play4fun/wordle/leaderboard" element={<Layout><WordleLeaderboardPage /></Layout>} />
+
+      {/* Admin route */}
+      <Route path="/admin" element={<Layout><ProtectedRoute><AdminRoute><AdminPage /></AdminRoute></ProtectedRoute></Layout>} />
     </Routes>
     </Suspense>
   )
@@ -428,7 +535,9 @@ function Auth0ProviderWithNavigate({ children }) {
       onRedirectCallback={onRedirectCallback}
       cacheLocation="localstorage"
     >
-      <AuthAxios>{children}</AuthAxios>
+      <AuthAxios>
+        <UserProfileProvider>{children}</UserProfileProvider>
+      </AuthAxios>
     </Auth0Provider>
   )
 }
