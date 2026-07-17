@@ -174,31 +174,34 @@ function UserProfileProvider({ children }) {
   const { isAuthenticated, user, isLoading: authLoading } = useAuth0()
   const [profile, setProfile] = useState(null)
   const [profileLoading, setProfileLoading] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const refreshProfile = () => setRefreshKey(k => k + 1)
 
-  const fetchProfile = async () => {
+  useEffect(() => {
+    if (authLoading) return
+
     if (!isAuthenticated || !user?.sub) {
       setProfile(null)
       setProfileLoading(false)
       return
     }
-    try {
-      const res = await axios.get(`/api/user-profiles/me/${encodeURIComponent(user.sub)}`)
-      setProfile(res.data) // null if not registered
-    } catch {
-      setProfile(null)
-    } finally {
-      setProfileLoading(false)
+
+    let cancelled = false
+    const fetchProfile = async () => {
+      try {
+        const res = await axios.get(`/api/user-profiles/me/${encodeURIComponent(user.sub)}`)
+        if (!cancelled) setProfile(res.data) // null if not registered
+      } catch {
+        if (!cancelled) setProfile(null)
+      } finally {
+        if (!cancelled) setProfileLoading(false)
+      }
     }
-  }
 
-  useEffect(() => {
-    if (!authLoading) fetchProfile()
-  }, [isAuthenticated, user?.sub, authLoading])
-
-  const refreshProfile = () => {
     setProfileLoading(true)
     fetchProfile()
-  }
+    return () => { cancelled = true }
+  }, [isAuthenticated, user?.sub, authLoading, refreshKey])
 
   return (
     <UserProfileContext.Provider value={{ profile, profileLoading, refreshProfile }}>
@@ -314,19 +317,19 @@ function Layout({ children }) {
   const { isAuthenticated, user } = useAuth0()
   const { profile, profileLoading, refreshProfile } = useUserProfile()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const isVerified = isAuthenticated && user?.email_verified
+  const isVerified = isAuthenticated && (user?.email_verified !== false)
   const isApproved = isVerified && profile?.status === 'approved'
   const isAdmin = isApproved && profile?.role === 'admin'
 
-  // If authenticated + verified but no profile yet → show registration
-  if (isVerified && !profileLoading && !profile) {
+  // If authenticated but no profile yet → show registration
+  if (isAuthenticated && !profileLoading && !profile) {
     return <RegisterPage onRegistered={refreshProfile} />
   }
   // If profile exists but not approved → show status page
-  if (isVerified && !profileLoading && profile && profile.status === 'pending') {
+  if (isAuthenticated && !profileLoading && profile && profile.status === 'pending') {
     return <RegistrationStatusPage status="pending" />
   }
-  if (isVerified && !profileLoading && profile && profile.status === 'rejected') {
+  if (isAuthenticated && !profileLoading && profile && profile.status === 'rejected') {
     return <RegistrationStatusPage status="rejected" rejectionReason={profile.rejectionReason} />
   }
 
