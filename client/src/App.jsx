@@ -2,7 +2,7 @@ import { useState, useEffect, lazy, Suspense, createContext, useContext } from '
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom'
 import { Auth0Provider, useAuth0 } from '@auth0/auth0-react'
 import { ThemeProvider, useTheme } from './ThemeContext'
-import AuthAxios from './auth/AuthAxios'
+import AuthAxios, { API_BASE } from './auth/AuthAxios'
 import axios from 'axios'
 
 // Lazy-loaded pages for code splitting
@@ -189,7 +189,7 @@ function UserProfileProvider({ children }) {
     let cancelled = false
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`/api/user-profiles/me/${encodeURIComponent(user.sub)}`)
+        const res = await axios.get(`${API_BASE}/user-profiles/me/${encodeURIComponent(user.sub)}`)
         if (!cancelled) setProfile(res.data) // null if not registered
       } catch {
         if (!cancelled) setProfile(null)

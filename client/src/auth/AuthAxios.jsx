@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import axios from 'axios'
 
-const API_BASE = import.meta.env.VITE_API_URL
+export const API_BASE = import.meta.env.VITE_API_URL
   || (window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : 'https://tennisapp-server.onrender.com/api')
 
 export default function AuthAxios({ children }) {
