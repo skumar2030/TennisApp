@@ -178,6 +178,7 @@ function UserProfileProvider({ children }) {
   const refreshProfile = () => setRefreshKey(k => k + 1)
 
   useEffect(() => {
+    console.log('[UserProfile] effect:', { authLoading, isAuthenticated, sub: user?.sub })
     if (authLoading) return
 
     if (!isAuthenticated || !user?.sub) {
