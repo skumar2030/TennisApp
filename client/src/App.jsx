@@ -24,9 +24,11 @@ const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
 const WordleLobbyPage = lazy(() => import('./pages/WordleLobbyPage'))
 const WordleGamePage = lazy(() => import('./pages/WordleGamePage'))
 const WordleLeaderboardPage = lazy(() => import('./pages/WordleLeaderboardPage'))
-const RegisterPage = lazy(() => import('./pages/RegisterPage'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
-const RegistrationStatusPage = lazy(() => import('./pages/RegistrationStatusPage'))
+
+// Eagerly imported — used in Layout before routing, can't be lazy
+import RegisterPage from './pages/RegisterPage'
+import RegistrationStatusPage from './pages/RegistrationStatusPage'
 
 // User profile context — shares profile state across the app
 const UserProfileContext = createContext(null)
