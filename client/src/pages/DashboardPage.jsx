@@ -655,8 +655,8 @@ export default function DashboardPage() {
           ))}
 
           {/* Quick tip box */}
-          <div className="bg-green-50 border border-green-200 rounded-xl p-5">
-            <h3 className="font-bold text-green-800 text-sm mb-2">Quick Recruiting Checklist</h3>
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-5">
+            <h3 className="font-bold text-green-800 dark:text-green-300 text-sm mb-2">Quick Recruiting Checklist</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               {[
                 'Create UTR Sports profile (free)',
@@ -668,7 +668,7 @@ export default function DashboardPage() {
                 'Research academic requirements at each school',
                 'Attend at least one college tennis camp',
               ].map(item => (
-                <div key={item} className="flex gap-2 text-xs text-green-800">
+                <div key={item} className="flex gap-2 text-xs text-green-800 dark:text-green-300">
                   <span className="text-green-500 font-bold shrink-0">✓</span>
                   {item}
                 </div>
@@ -689,8 +689,8 @@ export default function DashboardPage() {
           </div>
 
           {/* UTR Quick Reference */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-            <h3 className="font-bold text-blue-800 text-sm mb-3">UTR Targets by D1 Tier</h3>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+            <h3 className="font-bold text-blue-800 dark:text-blue-300 text-sm mb-3">UTR Targets by D1 Tier</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { tier: 'Top 25 D1', utr: '14–16+', color: 'bg-green-600' },
@@ -745,8 +745,8 @@ export default function DashboardPage() {
           <ProJourney />
 
           {/* Bottom note */}
-          <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <h3 className="font-bold text-amber-800 text-sm mb-2">Reality Check for Parents & Juniors</h3>
+          <div className="mt-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+            <h3 className="font-bold text-amber-800 dark:text-amber-300 text-sm mb-2">Reality Check for Parents & Juniors</h3>
             <div className="space-y-1.5">
               {[
                 'Only ~1% of college tennis players go on to have professional careers. The goal should be to love the sport and compete at the highest level you can enjoy.',
@@ -754,7 +754,7 @@ export default function DashboardPage() {
                 'Physical and mental maturity matters. Many players peak at 22–25 on the ATP/WTA Tour. College gives time to develop both.',
                 'The journey is the reward. Discipline, teamwork, resilience, and excellence — tennis teaches life skills that go far beyond the court.',
               ].map((note, i) => (
-                <div key={i} className="flex gap-2 text-xs text-amber-900">
+                <div key={i} className="flex gap-2 text-xs text-amber-900 dark:text-amber-300">
                   <span className="text-amber-500 font-bold shrink-0 mt-0.5">{i + 1}.</span>
                   {note}
                 </div>

@@ -177,9 +177,9 @@ export default function QuizGame() {
         {/* Question Type Badge */}
         <div>
           <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${
-            currentQuestion.type === 'multiple_choice' ? 'bg-blue-100 text-blue-700' :
-            currentQuestion.type === 'true_false' ? 'bg-purple-100 text-purple-700' :
-            'bg-orange-100 text-orange-700'
+            currentQuestion.type === 'multiple_choice' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+            currentQuestion.type === 'true_false' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' :
+            'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
           }`}>
             {currentQuestion.type === 'multiple_choice' ? 'Multiple Choice' :
              currentQuestion.type === 'true_false' ? 'True / False' :
@@ -310,15 +310,15 @@ export default function QuizGame() {
         {/* Feedback */}
         {feedback && (
           <div className={`p-4 rounded-lg ${
-            feedback.timedOut ? 'bg-yellow-50 border border-yellow-200' :
-            feedback.isCorrect ? 'bg-green-50 border border-green-200' :
+            feedback.timedOut ? 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800' :
+            feedback.isCorrect ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' :
             'bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800'
           }`}>
             <div className="flex items-center gap-2 mb-1">
               {feedback.timedOut ? (
-                <span className="text-yellow-700 font-semibold text-sm">Time's Up!</span>
+                <span className="text-yellow-700 dark:text-yellow-300 font-semibold text-sm">Time's Up!</span>
               ) : feedback.isCorrect ? (
-                <span className="text-green-700 font-semibold text-sm">Correct!</span>
+                <span className="text-green-700 dark:text-green-300 font-semibold text-sm">Correct!</span>
               ) : (
                 <span className="text-red-700 dark:text-red-400 font-semibold text-sm">Incorrect</span>
               )}

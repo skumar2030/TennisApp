@@ -192,7 +192,7 @@ export default function WordleLobbyPage() {
             {activeRooms.map(room => (
               <div key={room.roomId} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono font-bold text-sm bg-gray-200 px-2 py-1 rounded">{room.roomId}</span>
+                  <span className="font-mono font-bold text-sm bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded">{room.roomId}</span>
                   <div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-200">by {room.createdByName}</span>
                     {room.status === 'waiting' ? (

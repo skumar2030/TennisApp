@@ -12,10 +12,10 @@ export default function QuizResults() {
 
   const { score, totalQuestions, percentage, avgTime, categoryName, difficulty, answers, results } = data
 
-  const grade = percentage === 100 ? { label: 'Perfect!', color: 'text-green-600', bg: 'bg-green-50', icon: '🏆' }
-    : percentage >= 80 ? { label: 'Excellent!', color: 'text-green-600', bg: 'bg-green-50', icon: '🌟' }
-    : percentage >= 60 ? { label: 'Good Job!', color: 'text-blue-600', bg: 'bg-blue-50', icon: '👍' }
-    : percentage >= 40 ? { label: 'Not Bad', color: 'text-yellow-600', bg: 'bg-yellow-50', icon: '📚' }
+  const grade = percentage === 100 ? { label: 'Perfect!', color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20', icon: '🏆' }
+    : percentage >= 80 ? { label: 'Excellent!', color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/20', icon: '🌟' }
+    : percentage >= 60 ? { label: 'Good Job!', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', icon: '👍' }
+    : percentage >= 40 ? { label: 'Not Bad', color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-900/20', icon: '📚' }
     : { label: 'Keep Trying!', color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-900/30', icon: '💪' }
 
   return (

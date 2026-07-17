@@ -131,7 +131,7 @@ export default function QuizPage() {
               onClick={() => setSelectedCategory(cat.id)}
               className={`p-4 rounded-xl border-2 text-left transition-all ${
                 selectedCategory === cat.id
-                  ? 'border-green-600 bg-green-50 shadow-md'
+                  ? 'border-green-600 bg-green-50 dark:bg-green-900/20 shadow-md'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:shadow-sm bg-white dark:bg-gray-800'
               }`}
             >
@@ -149,8 +149,8 @@ export default function QuizPage() {
         <div className="grid grid-cols-3 gap-3">
           {difficulties.map(diff => {
             const colors = {
-              easy: { border: 'border-green-500', bg: 'bg-green-50', dot: 'bg-green-500' },
-              medium: { border: 'border-yellow-500', bg: 'bg-yellow-50', dot: 'bg-yellow-500' },
+              easy: { border: 'border-green-500', bg: 'bg-green-50 dark:bg-green-900/20', dot: 'bg-green-500' },
+              medium: { border: 'border-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20', dot: 'bg-yellow-500' },
               hard: { border: 'border-red-500', bg: 'bg-red-50 dark:bg-red-900/30', dot: 'bg-red-500' },
             }
             const c = colors[diff.id]
