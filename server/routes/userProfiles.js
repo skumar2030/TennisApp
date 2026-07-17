@@ -191,4 +191,34 @@ router.put('/admin/:id/reject', async (req, res) => {
   }
 })
 
+// POST /api/user-profiles/setup-admin — one-time setup to promote first user to admin
+router.post('/setup-admin', async (req, res) => {
+  try {
+    // Check if any admin exists already
+    const existingAdmin = await prisma.userProfile.findFirst({ where: { role: 'admin' } })
+    if (existingAdmin) {
+      return res.status(403).json({ error: 'Admin already exists. Use the admin dashboard instead.' })
+    }
+
+    const { email } = req.body
+    if (!email) {
+      return res.status(400).json({ error: 'email is required' })
+    }
+
+    const profile = await prisma.userProfile.updateMany({
+      where: { email },
+      data: { role: 'admin', status: 'approved' },
+    })
+
+    if (profile.count === 0) {
+      return res.status(404).json({ error: 'No user found with that email' })
+    }
+
+    res.json({ message: 'Admin setup complete', updated: profile.count })
+  } catch (err) {
+    console.error('Failed to setup admin:', err.message)
+    res.status(500).json({ error: 'Failed to setup admin' })
+  }
+})
+
 module.exports = router
