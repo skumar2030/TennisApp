@@ -337,7 +337,7 @@ export default function WordleGamePage() {
       {!isWaiting && otherPlayers.length > 0 && (
         <div className="flex flex-wrap gap-2 justify-center">
           {otherPlayers.map(p => (
-            <div key={p.userId} className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
+            <div key={p.userId} className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-xs font-medium">
               <span>{p.userName}</span>
               <span className="font-bold">{p.wordsFound} words · {p.score} pts</span>
             </div>
@@ -350,7 +350,7 @@ export default function WordleGamePage() {
       <div className="h-10 flex items-center justify-center">
         {currentWord ? (
           <div className={`text-xl font-black tracking-widest px-4 py-1 rounded-lg ${
-            currentWord.length >= 3 ? 'text-green-700 bg-green-50' : 'text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900'
+            currentWord.length >= 3 ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20' : 'text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900'
           }`}>
             {currentWord}
           </div>
@@ -446,8 +446,8 @@ export default function WordleGamePage() {
           <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Your Words ({myFoundWords.length})</p>
           <div className="flex flex-wrap gap-1.5">
             {myFoundWords.map((fw, i) => (
-              <span key={i} className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-semibold">
-                {fw.word} <span className="text-green-500">+{fw.points}</span>
+              <span key={i} className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-0.5 rounded text-xs font-semibold">
+                {fw.word} <span className="text-green-500 dark:text-green-400">+{fw.points}</span>
               </span>
             ))}
           </div>
@@ -471,7 +471,7 @@ export default function WordleGamePage() {
               <div className="space-y-2">
                 {[...allPlayersWords].sort((a, b) => b.score - a.score).map((p, i) => (
                   <div key={p.userId} className={`flex items-center justify-between px-3 py-2 rounded-lg ${
-                    i === 0 ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50 dark:bg-gray-900'
+                    i === 0 ? 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800' : 'bg-gray-50 dark:bg-gray-900'
                   }`}>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-black text-gray-400">{i === 0 ? '🏆' : `#${i + 1}`}</span>
@@ -493,7 +493,7 @@ export default function WordleGamePage() {
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Your Words ({myFoundWords.length})</p>
               <div className="flex flex-wrap gap-1.5">
                 {myFoundWords.map((fw, i) => (
-                  <span key={i} className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-semibold">
+                  <span key={i} className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-0.5 rounded text-xs font-semibold">
                     {fw.word} +{fw.points}
                   </span>
                 ))}
@@ -531,7 +531,7 @@ export default function WordleGamePage() {
             </button>
             <button
               onClick={() => navigate('/play4fun/wordle/leaderboard')}
-              className="flex-1 border border-gray-300 rounded-xl py-3 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
+              className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-xl py-3 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900"
             >
               Leaderboard
             </button>

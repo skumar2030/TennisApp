@@ -198,14 +198,14 @@ export default function QuizGame() {
             let btnClass = 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900'
             if (feedback) {
               if (option === feedback.correctAnswer) {
-                btnClass = 'border-green-500 bg-green-50 text-green-800'
+                btnClass = 'border-green-500 bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300'
               } else if (option === selectedAnswer && !feedback.isCorrect) {
-                btnClass = 'border-red-500 bg-red-50 dark:bg-red-900/30 text-red-800'
+                btnClass = 'border-red-500 bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300'
               } else {
                 btnClass = 'border-gray-200 dark:border-gray-700 opacity-50'
               }
             } else if (selectedAnswer === option) {
-              btnClass = 'border-green-600 bg-green-50'
+              btnClass = 'border-green-600 bg-green-50 dark:bg-green-900/20'
             }
 
             return (
@@ -241,14 +241,14 @@ export default function QuizGame() {
             let btnClass = 'border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900'
             if (feedback) {
               if (option === feedback.correctAnswer) {
-                btnClass = 'border-green-500 bg-green-50 text-green-800'
+                btnClass = 'border-green-500 bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-300'
               } else if (option === selectedAnswer && !feedback.isCorrect) {
-                btnClass = 'border-red-500 bg-red-50 dark:bg-red-900/30 text-red-800'
+                btnClass = 'border-red-500 bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-300'
               } else {
                 btnClass = 'border-gray-200 dark:border-gray-700 opacity-50'
               }
             } else if (selectedAnswer === option) {
-              btnClass = 'border-green-600 bg-green-50'
+              btnClass = 'border-green-600 bg-green-50 dark:bg-green-900/20'
             }
 
             return (
@@ -283,8 +283,8 @@ export default function QuizGame() {
                 className={`w-full p-3 rounded-lg border-2 text-sm font-medium outline-none transition-all ${
                   feedback
                     ? feedback.isCorrect
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-red-500 bg-red-50 dark:bg-red-900/30'
+                      ? 'border-green-500 bg-green-50 dark:bg-green-900/30 dark:text-green-300'
+                      : 'border-red-500 bg-red-50 dark:bg-red-900/30 dark:text-red-300'
                     : 'border-gray-200 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 focus:border-green-600'
                 }`}
               />

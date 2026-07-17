@@ -114,9 +114,9 @@ export default function WordleLobbyPage() {
       </div>
 
       {/* How to Play */}
-      <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-        <h3 className="text-sm font-bold text-green-800 mb-2">How to Play</h3>
-        <ul className="text-xs text-green-700 space-y-1">
+      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+        <h3 className="text-sm font-bold text-green-800 dark:text-green-300 mb-2">How to Play</h3>
+        <ul className="text-xs text-green-700 dark:text-green-400 space-y-1">
           <li>- Drag across adjacent letters to form tennis words (3+ letters)</li>
           <li>- Connect horizontally, vertically, or diagonally</li>
           <li>- Each letter cell can only be used once per word</li>
@@ -140,7 +140,7 @@ export default function WordleLobbyPage() {
                 onClick={() => setSelectedDuration(d.id)}
                 className={`p-4 rounded-xl border-2 text-center transition-all ${
                   isSelected
-                    ? 'border-green-600 bg-green-50 shadow-md ring-2 ring-green-500'
+                    ? 'border-green-600 bg-green-50 dark:bg-green-900/20 shadow-md ring-2 ring-green-500'
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
                 }`}
               >
@@ -196,7 +196,7 @@ export default function WordleLobbyPage() {
                   <div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-200">by {room.createdByName}</span>
                     {room.status === 'waiting' ? (
-                      <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium ml-2">Waiting</span>
+                      <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded-full font-medium ml-2">Waiting</span>
                     ) : (
                       <span className="text-xs text-gray-400 ml-2">{formatTime(room.timeRemaining)} left</span>
                     )}
