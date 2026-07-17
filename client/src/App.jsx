@@ -189,10 +189,14 @@ function UserProfileProvider({ children }) {
 
     let cancelled = false
     const fetchProfile = async () => {
+      const url = `/api/user-profiles/me/${encodeURIComponent(user.sub)}`
+      console.log('[UserProfile] fetching:', url)
       try {
-        const res = await axios.get(`/api/user-profiles/me/${encodeURIComponent(user.sub)}`)
+        const res = await axios.get(url)
+        console.log('[UserProfile] response:', res.data)
         if (!cancelled) setProfile(res.data) // null if not registered
-      } catch {
+      } catch (err) {
+        console.error('[UserProfile] fetch error:', err.message, err.response?.status)
         if (!cancelled) setProfile(null)
       } finally {
         if (!cancelled) setProfileLoading(false)
