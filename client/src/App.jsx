@@ -1,25 +1,39 @@
+import { useState, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom'
 import { Auth0Provider, useAuth0 } from '@auth0/auth0-react'
 import { ThemeProvider, useTheme } from './ThemeContext'
-import DashboardPage from './pages/DashboardPage'
-import PlayersPage from './pages/PlayersPage'
-import SchedulePage from './pages/SchedulePage'
-import ExpensesPage from './pages/ExpensesPage'
-import ExpenseSummaryPage from './pages/ExpenseSummaryPage'
-import HistoryPage from './pages/HistoryPage'
-import LiveScorePage from './pages/LiveScorePage'
-import NewsPage from './pages/NewsPage'
-import ProfilePage from './pages/ProfilePage'
-import LoginPage from './pages/LoginPage'
-import QuizPage from './pages/QuizPage'
-import QuizGame from './pages/QuizGame'
-import QuizResults from './pages/QuizResults'
-import QuizHistoryPage from './pages/QuizHistoryPage'
-import LeaderboardPage from './pages/LeaderboardPage'
-import WordleLobbyPage from './pages/WordleLobbyPage'
-import WordleGamePage from './pages/WordleGamePage'
-import WordleLeaderboardPage from './pages/WordleLeaderboardPage'
 import AuthAxios from './auth/AuthAxios'
+
+// Lazy-loaded pages for code splitting
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const PlayersPage = lazy(() => import('./pages/PlayersPage'))
+const SchedulePage = lazy(() => import('./pages/SchedulePage'))
+const ExpensesPage = lazy(() => import('./pages/ExpensesPage'))
+const ExpenseSummaryPage = lazy(() => import('./pages/ExpenseSummaryPage'))
+const HistoryPage = lazy(() => import('./pages/HistoryPage'))
+const LiveScorePage = lazy(() => import('./pages/LiveScorePage'))
+const NewsPage = lazy(() => import('./pages/NewsPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const QuizPage = lazy(() => import('./pages/QuizPage'))
+const QuizGame = lazy(() => import('./pages/QuizGame'))
+const QuizResults = lazy(() => import('./pages/QuizResults'))
+const QuizHistoryPage = lazy(() => import('./pages/QuizHistoryPage'))
+const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'))
+const WordleLobbyPage = lazy(() => import('./pages/WordleLobbyPage'))
+const WordleGamePage = lazy(() => import('./pages/WordleGamePage'))
+const WordleLeaderboardPage = lazy(() => import('./pages/WordleLeaderboardPage'))
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <div className="text-center">
+        <div className="w-8 h-8 border-3 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Loading...</p>
+      </div>
+    </div>
+  )
+}
 
 const AUTH0_DOMAIN = import.meta.env.VITE_AUTH0_DOMAIN
 const AUTH0_CLIENT_ID = import.meta.env.VITE_AUTH0_CLIENT_ID
@@ -352,6 +366,7 @@ function LoginCallback() {
 
 function AppRoutes() {
   return (
+    <Suspense fallback={<Layout><PageLoader /></Layout>}>
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<Layout><DashboardPage /></Layout>} />
@@ -380,6 +395,7 @@ function AppRoutes() {
       <Route path="/play4fun/wordle/:roomId" element={<Layout><ProtectedRoute><WordleGamePage /></ProtectedRoute></Layout>} />
       <Route path="/play4fun/wordle/leaderboard" element={<Layout><WordleLeaderboardPage /></Layout>} />
     </Routes>
+    </Suspense>
   )
 }
 
@@ -388,6 +404,17 @@ function Auth0ProviderWithNavigate({ children }) {
 
   const onRedirectCallback = (appState) => {
     navigate(appState?.returnTo || '/')
+  }
+
+  if (!AUTH0_DOMAIN || !AUTH0_CLIENT_ID) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center max-w-md">
+          <p className="text-red-600 font-semibold text-lg">Configuration Error</p>
+          <p className="text-sm text-gray-500 mt-2">Auth0 environment variables are not set. Please set VITE_AUTH0_DOMAIN and VITE_AUTH0_CLIENT_ID.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
