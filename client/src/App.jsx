@@ -199,7 +199,8 @@ function UserProfileProvider({ children }) {
     let cancelled = false
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/user-profiles/me/${encodeURIComponent(user.sub)}`)
+        const emailParam = user.email ? `?email=${encodeURIComponent(user.email)}` : ''
+        const res = await axios.get(`${API_BASE}/user-profiles/me/${encodeURIComponent(user.sub)}${emailParam}`)
         if (!cancelled) setProfile(res.data) // null if not registered
       } catch {
         if (!cancelled) setProfile(null)

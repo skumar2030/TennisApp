@@ -6,9 +6,27 @@ const prisma = require('../prisma/client')
 router.get('/me/:auth0Id', async (req, res) => {
   try {
     const auth0Id = decodeURIComponent(req.params.auth0Id)
-    const profile = await prisma.userProfile.findUnique({
+    const email = req.query.email
+
+    // Try by auth0Id first
+    let profile = await prisma.userProfile.findUnique({
       where: { auth0Id },
     })
+
+    // Fallback: look up by email (handles multiple login methods)
+    if (!profile && email) {
+      profile = await prisma.userProfile.findFirst({
+        where: { email },
+      })
+      // Link this auth0Id to the existing profile
+      if (profile) {
+        await prisma.userProfile.update({
+          where: { id: profile.id },
+          data: { auth0Id },
+        })
+      }
+    }
+
     res.json(profile) // null if not registered yet
   } catch (err) {
     console.error('Failed to fetch user profile:', err.message)
@@ -30,10 +48,19 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'auth0Id, email, and fullName are required' })
     }
 
-    // Check if already registered
-    const existing = await prisma.userProfile.findUnique({ where: { auth0Id } })
-    if (existing) {
-      return res.status(409).json({ error: 'User already registered', profile: existing })
+    // Check if already registered by auth0Id or email
+    const existingById = await prisma.userProfile.findUnique({ where: { auth0Id } })
+    if (existingById) {
+      return res.status(409).json({ error: 'User already registered', profile: existingById })
+    }
+    const existingByEmail = await prisma.userProfile.findFirst({ where: { email } })
+    if (existingByEmail) {
+      // Link this auth0Id to the existing profile
+      const updated = await prisma.userProfile.update({
+        where: { id: existingByEmail.id },
+        data: { auth0Id },
+      })
+      return res.json(updated)
     }
 
     const profile = await prisma.userProfile.create({
