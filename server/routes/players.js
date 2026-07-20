@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
     ])
 
     const playerNames = new Set(players.map(p => p.name.toLowerCase()))
-    const merged = [...players]
+    const merged = players.map(p => ({ ...p, isRegistered: false }))
 
     for (const profile of approvedProfiles) {
       if (!playerNames.has(profile.fullName.toLowerCase())) {
@@ -25,6 +25,7 @@ router.get('/', async (req, res) => {
           ustaRating: profile.utrSingles || profile.ustaRating || 'N/A',
           phone: null,
           notes: null,
+          createdByUserId: null,
           isRegistered: true,
           profileId: profile.id,
         })
@@ -53,13 +54,19 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/players
 router.post('/', async (req, res) => {
-  const { name, ustaRating, phone, notes } = req.body;
+  const { name, ustaRating, phone, notes, createdByUserId } = req.body;
   if (!name || !ustaRating) {
     return res.status(400).json({ error: 'name and ustaRating are required' });
   }
   try {
     const player = await prisma.player.create({
-      data: { name, ustaRating, phone: phone || null, notes: notes || null },
+      data: {
+        name,
+        ustaRating,
+        phone: phone || null,
+        notes: notes || null,
+        createdByUserId: createdByUserId || null,
+      },
     });
     res.status(201).json(player);
   } catch (err) {
@@ -69,11 +76,18 @@ router.post('/', async (req, res) => {
 
 // PUT /api/players/:id
 router.put('/:id', async (req, res) => {
-  const { name, ustaRating, phone, notes } = req.body;
+  const { name, ustaRating, phone, notes, requestingUserId } = req.body;
   if (!name || !ustaRating) {
     return res.status(400).json({ error: 'name and ustaRating are required' });
   }
   try {
+    const existing = await prisma.player.findUnique({ where: { id: parseInt(req.params.id) } });
+    if (!existing) return res.status(404).json({ error: 'Player not found' });
+
+    if (existing.createdByUserId && requestingUserId && existing.createdByUserId !== requestingUserId) {
+      return res.status(403).json({ error: 'You can only edit players you added' });
+    }
+
     const player = await prisma.player.update({
       where: { id: parseInt(req.params.id) },
       data: { name, ustaRating, phone: phone || null, notes: notes || null },
@@ -88,6 +102,14 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/players/:id
 router.delete('/:id', async (req, res) => {
   try {
+    const requestingUserId = req.query.userId;
+    const player = await prisma.player.findUnique({ where: { id: parseInt(req.params.id) } });
+    if (!player) return res.status(404).json({ error: 'Player not found' });
+
+    if (player.createdByUserId && requestingUserId && player.createdByUserId !== requestingUserId) {
+      return res.status(403).json({ error: 'You can only delete players you added' });
+    }
+
     await prisma.player.delete({ where: { id: parseInt(req.params.id) } });
     res.json({ message: 'Player deleted' });
   } catch (err) {

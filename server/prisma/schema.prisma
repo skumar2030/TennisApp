@@ -9,12 +9,13 @@ datasource db {
 }
 
 model Player {
-  id         Int      @id @default(autoincrement())
-  name       String
-  ustaRating String
-  phone      String?
-  notes      String?
-  createdAt  DateTime @default(now())
+  id              Int      @id @default(autoincrement())
+  name            String
+  ustaRating      String
+  phone           String?
+  notes           String?
+  createdByUserId String?
+  createdAt       DateTime @default(now())
 
   matchPlayers   MatchPlayer[]
   expensesPaid   Expense[]      @relation("PaidBy")

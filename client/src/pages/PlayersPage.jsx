@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useAuth0 } from '@auth0/auth0-react'
 import axios from 'axios'
 
 const emptyForm = { name: '', ustaRating: '', phone: '', notes: '' }
 
 export default function PlayersPage() {
+  const { user } = useAuth0()
+  const userId = user?.sub
   const [players, setPlayers] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
@@ -54,9 +57,9 @@ export default function PlayersPage() {
     setError('')
     try {
       if (editingId) {
-        await axios.put(`/api/players/${editingId}`, form)
+        await axios.put(`/api/players/${editingId}`, { ...form, requestingUserId: userId })
       } else {
-        await axios.post('/api/players', form)
+        await axios.post('/api/players', { ...form, createdByUserId: userId })
       }
       setShowForm(false)
       setEditingId(null)
@@ -73,11 +76,17 @@ export default function PlayersPage() {
   const handleDelete = async (id, name) => {
     if (!window.confirm(`Delete player "${name}"?`)) return
     try {
-      await axios.delete(`/api/players/${id}`)
+      await axios.delete(`/api/players/${id}?userId=${encodeURIComponent(userId)}`)
       fetchPlayers()
-    } catch {
-      setError('Failed to delete player.')
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete player.')
     }
+  }
+
+  const canManage = (player) => {
+    if (player.isRegistered) return false
+    if (!player.createdByUserId) return true
+    return player.createdByUserId === userId
   }
 
   return (
@@ -171,6 +180,8 @@ export default function PlayersPage() {
         </div>
       )}
 
+      {error && !showForm && <p className="text-red-600 text-sm mb-3">{error}</p>}
+
       {/* Player Table */}
       {loading ? (
         <p className="text-gray-500 dark:text-gray-400 text-sm">Loading...</p>
@@ -188,33 +199,45 @@ export default function PlayersPage() {
                 <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">UTR Rating</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Phone</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Notes</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600 dark:text-gray-300">Type</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {players.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-900">
+                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100">{p.name}</td>
                   <td className="px-4 py-3">
-                    <span className="inline-block bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded">
+                    <span className="inline-block bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-semibold px-2 py-0.5 rounded">
                       {p.ustaRating}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{p.phone || '—'}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{p.notes || '—'}</td>
+                  <td className="px-4 py-3">
+                    {p.isRegistered ? (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">Registered</span>
+                    ) : (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">Added</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right space-x-2">
-                    <button
-                      onClick={() => openEdit(p)}
-                      className="text-blue-600 hover:underline text-xs font-medium"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(p.id, p.name)}
-                      className="text-red-500 hover:underline text-xs font-medium"
-                    >
-                      Delete
-                    </button>
+                    {canManage(p) && (
+                      <>
+                        <button
+                          onClick={() => openEdit(p)}
+                          className="text-blue-600 hover:underline text-xs font-medium"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(p.id, p.name)}
+                          className="text-red-500 hover:underline text-xs font-medium"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
