@@ -9,6 +9,7 @@ const emptyForm = {
   matchType: 'singles',
   notes: '',
   players: { team1p1: '', team1p2: '', team2p1: '', team2p2: '' },
+  playerNames: { team1p1: '', team1p2: '', team2p1: '', team2p2: '' },
 }
 
 function formatDateTime(dt) {
@@ -145,9 +146,15 @@ export default function SchedulePage() {
 
   const openEdit = (match) => {
     const mp = match.matchPlayers
-    const get = (team, role) => {
+    const getPlayer = (team, role) => {
       const p = mp.find(x => x.team === team && x.role === role)
-      return p?.playerId ? String(p.playerId) : ''
+      if (p?.playerId) return String(p.playerId)
+      if (p?.tbdName) return '__custom__'
+      return ''
+    }
+    const getPlayerName = (team, role) => {
+      const p = mp.find(x => x.team === team && x.role === role)
+      return p?.tbdName || ''
     }
     setForm({
       dateTime: new Date(match.dateTime).toISOString().slice(0, 16),
@@ -155,10 +162,16 @@ export default function SchedulePage() {
       matchType: match.matchType,
       notes: match.notes || '',
       players: {
-        team1p1: get(1, 'player1'),
-        team1p2: get(1, 'player2'),
-        team2p1: get(2, 'player1'),
-        team2p2: get(2, 'player2'),
+        team1p1: getPlayer(1, 'player1'),
+        team1p2: getPlayer(1, 'player2'),
+        team2p1: getPlayer(2, 'player1'),
+        team2p2: getPlayer(2, 'player2'),
+      },
+      playerNames: {
+        team1p1: getPlayerName(1, 'player1'),
+        team1p2: getPlayerName(1, 'player2'),
+        team2p1: getPlayerName(2, 'player1'),
+        team2p2: getPlayerName(2, 'player2'),
       },
     })
     setEditingId(match.id)
@@ -175,15 +188,31 @@ export default function SchedulePage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    const buildPlayerVal = (key) => {
+      const val = form.players[key]
+      if (!val || val === '') return null
+      if (val === '__custom__') return null
+      if (String(val).startsWith('profile_')) return val
+      return parseInt(val)
+    }
+    const buildPlayerName = (key) => {
+      if (form.players[key] === '__custom__') return form.playerNames[key] || null
+      return null
+    }
     const payload = {
       ...form,
       players: {
-        team1p1: form.players.team1p1 ? parseInt(form.players.team1p1) : null,
-        team1p2: form.players.team1p2 ? parseInt(form.players.team1p2) : null,
-        team2p1: form.players.team2p1 ? parseInt(form.players.team2p1) : null,
-        team2p2: form.players.team2p2 ? parseInt(form.players.team2p2) : null,
+        team1p1: buildPlayerVal('team1p1'),
+        team1p2: buildPlayerVal('team1p2'),
+        team2p1: buildPlayerVal('team2p1'),
+        team2p2: buildPlayerVal('team2p2'),
+        team1p1Name: buildPlayerName('team1p1'),
+        team1p2Name: buildPlayerName('team1p2'),
+        team2p1Name: buildPlayerName('team2p1'),
+        team2p2Name: buildPlayerName('team2p2'),
       },
     }
+    delete payload.playerNames
     try {
       if (editingId) {
         await axios.put(`/api/matches/${editingId}`, payload)
@@ -212,8 +241,24 @@ export default function SchedulePage() {
     }
   }
 
-  const setPlayer = (key, value) =>
-    setForm(f => ({ ...f, players: { ...f.players, [key]: value } }))
+  const setPlayer = (key, value) => {
+    if (value === '__custom__') {
+      setForm(f => ({
+        ...f,
+        players: { ...f.players, [key]: '__custom__' },
+        playerNames: { ...f.playerNames, [key]: '' },
+      }))
+    } else {
+      setForm(f => ({
+        ...f,
+        players: { ...f.players, [key]: value },
+        playerNames: { ...f.playerNames, [key]: '' },
+      }))
+    }
+  }
+
+  const setPlayerName = (key, name) =>
+    setForm(f => ({ ...f, playerNames: { ...f.playerNames, [key]: name } }))
 
   const PlayerSelect = ({ label, fieldKey, required }) => (
     <div>
@@ -227,10 +272,31 @@ export default function SchedulePage() {
         className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
       >
         <option value="">— TBD —</option>
-        {players.map(p => (
-          <option key={p.id} value={p.id}>{p.name} ({p.ustaRating})</option>
-        ))}
+        {players.filter(p => p.isRegistered).length > 0 && (
+          <optgroup label="Registered Players">
+            {players.filter(p => p.isRegistered).map(p => (
+              <option key={p.id} value={p.id}>{p.name} ({p.ustaRating})</option>
+            ))}
+          </optgroup>
+        )}
+        {players.filter(p => !p.isRegistered).length > 0 && (
+          <optgroup label="Other Players">
+            {players.filter(p => !p.isRegistered).map(p => (
+              <option key={p.id} value={p.id}>{p.name} ({p.ustaRating})</option>
+            ))}
+          </optgroup>
+        )}
+        <option value="__custom__">+ Add Unregistered Player</option>
       </select>
+      {form.players[fieldKey] === '__custom__' && (
+        <input
+          type="text"
+          value={form.playerNames[fieldKey]}
+          onChange={e => setPlayerName(fieldKey, e.target.value)}
+          placeholder="Enter player name..."
+          className="w-full mt-2 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm dark:bg-gray-700 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+      )}
     </div>
   )
 

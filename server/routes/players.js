@@ -2,13 +2,37 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../prisma/client');
 
-// GET /api/players
+// GET /api/players — returns all players merged with approved UserProfiles
 router.get('/', async (req, res) => {
   try {
-    const players = await prisma.player.findMany({
-      orderBy: { name: 'asc' },
-    });
-    res.json(players);
+    const [players, approvedProfiles] = await Promise.all([
+      prisma.player.findMany({ orderBy: { name: 'asc' } }),
+      prisma.userProfile.findMany({
+        where: { status: 'approved' },
+        select: { id: true, fullName: true, utrSingles: true, ustaRating: true, email: true },
+        orderBy: { fullName: 'asc' },
+      }),
+    ])
+
+    const playerNames = new Set(players.map(p => p.name.toLowerCase()))
+    const merged = [...players]
+
+    for (const profile of approvedProfiles) {
+      if (!playerNames.has(profile.fullName.toLowerCase())) {
+        merged.push({
+          id: `profile_${profile.id}`,
+          name: profile.fullName,
+          ustaRating: profile.utrSingles || profile.ustaRating || 'N/A',
+          phone: null,
+          notes: null,
+          isRegistered: true,
+          profileId: profile.id,
+        })
+      }
+    }
+
+    merged.sort((a, b) => a.name.localeCompare(b.name))
+    res.json(merged)
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

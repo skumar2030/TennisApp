@@ -70,6 +70,7 @@ router.post('/', async (req, res) => {
   }
 
   try {
+    const resolvedPlayers = await resolvePlayerIds(players);
     const match = await prisma.match.create({
       data: {
         dateTime: new Date(dateTime),
@@ -77,7 +78,7 @@ router.post('/', async (req, res) => {
         matchType,
         notes: notes || null,
         matchPlayers: {
-          create: buildMatchPlayers(matchType, players),
+          create: buildMatchPlayers(matchType, resolvedPlayers),
         },
       },
       include: {
@@ -99,7 +100,7 @@ router.put('/:id', async (req, res) => {
   }
 
   try {
-    // Delete existing matchPlayers and recreate
+    const resolvedPlayers = await resolvePlayerIds(players);
     await prisma.matchPlayer.deleteMany({ where: { matchId: parseInt(req.params.id) } });
 
     const match = await prisma.match.update({
@@ -110,7 +111,7 @@ router.put('/:id', async (req, res) => {
         matchType,
         notes: notes || null,
         matchPlayers: {
-          create: buildMatchPlayers(matchType, players),
+          create: buildMatchPlayers(matchType, resolvedPlayers),
         },
       },
       include: {
@@ -148,6 +149,36 @@ router.patch('/:id/cancel', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// Helper: resolve profile_XX IDs to actual Player records (auto-create if needed)
+async function resolvePlayerIds(players = {}) {
+  const resolved = { ...players };
+  for (const key of ['team1p1', 'team1p2', 'team2p1', 'team2p2']) {
+    const val = resolved[key];
+    if (typeof val === 'string' && val.startsWith('profile_')) {
+      const profileId = parseInt(val.replace('profile_', ''));
+      const profile = await prisma.userProfile.findUnique({ where: { id: profileId } });
+      if (profile) {
+        let player = await prisma.player.findFirst({
+          where: { name: { equals: profile.fullName, mode: 'insensitive' } },
+        });
+        if (!player) {
+          player = await prisma.player.create({
+            data: {
+              name: profile.fullName,
+              ustaRating: profile.utrSingles || profile.ustaRating || 'N/A',
+              phone: profile.phone || null,
+            },
+          });
+        }
+        resolved[key] = player.id;
+      } else {
+        resolved[key] = null;
+      }
+    }
+  }
+  return resolved;
+}
 
 // Helper: build matchPlayers array from request body
 function buildMatchPlayers(matchType, players = {}) {
