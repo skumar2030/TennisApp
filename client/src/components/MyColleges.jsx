@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import axios from 'axios'
+import { API_BASE } from '../auth/AuthAxios'
 
 const DIVISIONS = ['D1', 'D2', 'D3', 'NAIA']
 
@@ -140,7 +141,7 @@ export default function MyColleges() {
       const formData = new FormData()
       formData.append('file', importFile)
       formData.append('userId', userId)
-      const { data } = await axios.post('/api/colleges/import', formData, {
+      const { data } = await axios.post(`${API_BASE}/colleges/import`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       setImportResult(data)
@@ -446,7 +447,7 @@ export default function MyColleges() {
               </div>
 
               <a
-                href="/api/colleges/template/download"
+                href={`${API_BASE}/colleges/template/download`}
                 className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 hover:text-green-800 font-medium"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
