@@ -48,6 +48,10 @@ export default function MyColleges() {
   const [expandedId, setExpandedId] = useState(null)
   const [sortBy, setSortBy] = useState('choiceRank')
   const [filterStatus, setFilterStatus] = useState('')
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importFile, setImportFile] = useState(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState(null)
 
   useEffect(() => {
     if (!userId) return
@@ -128,6 +132,26 @@ export default function MyColleges() {
     }
   }
 
+  const handleImport = async () => {
+    if (!importFile) return
+    setImporting(true)
+    setImportResult(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', importFile)
+      formData.append('userId', userId)
+      const { data } = await axios.post('/api/colleges/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      setImportResult(data)
+      fetchColleges()
+    } catch (err) {
+      setImportResult({ error: err.response?.data?.error || 'Import failed' })
+    } finally {
+      setImporting(false)
+    }
+  }
+
   const updateField = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
   // Quick status update without opening modal
@@ -174,12 +198,23 @@ export default function MyColleges() {
           <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">My College List</h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Track your college applications, requirements, and status</p>
         </div>
-        <button
-          onClick={openAdd}
-          className="bg-green-700 hover:bg-green-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-        >
-          + Add College
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => { setShowImportModal(true); setImportFile(null); setImportResult(null) }}
+            className="border border-green-600 text-green-700 dark:text-green-400 dark:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 text-sm font-semibold px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            Import Excel
+          </button>
+          <button
+            onClick={openAdd}
+            className="bg-green-700 hover:bg-green-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+          >
+            + Add College
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -239,12 +274,23 @@ export default function MyColleges() {
           <p className="text-3xl mb-2">🎓</p>
           <p className="text-gray-500 dark:text-gray-400 text-sm">No colleges added yet</p>
           <p className="text-gray-400 text-xs mt-1">Start building your college list to track applications</p>
-          <button
-            onClick={openAdd}
-            className="mt-4 bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-green-800"
-          >
-            Add Your First College
-          </button>
+          <div className="flex justify-center gap-3 mt-4">
+            <button
+              onClick={() => { setShowImportModal(true); setImportFile(null); setImportResult(null) }}
+              className="border border-green-600 text-green-700 dark:text-green-400 px-5 py-2 rounded-lg text-sm font-semibold hover:bg-green-50 dark:hover:bg-green-900/20 flex items-center gap-1.5"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Import Excel
+            </button>
+            <button
+              onClick={openAdd}
+              className="bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-green-800"
+            >
+              Add Manually
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">
@@ -379,6 +425,99 @@ export default function MyColleges() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-20 px-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Import College List</h3>
+              <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <p className="text-xs text-blue-700 dark:text-blue-300 font-medium mb-1">Supported columns:</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">
+                  College Name, Division, Choice Rank, Program Ranking, Acceptance Rate %, Required GPA, Required SAT, Required ACT, UTR Requirement, Tuition Annual $, Scholarship %, Coach Name, Coach Email, Notes
+                </p>
+              </div>
+
+              <a
+                href="/api/colleges/template/download"
+                className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400 hover:text-green-800 font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Template (.xlsx)
+              </a>
+
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={e => setImportFile(e.target.files[0])}
+                  className="hidden"
+                  id="college-import-file"
+                />
+                <label htmlFor="college-import-file" className="cursor-pointer">
+                  <svg className="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  {importFile ? (
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{importFile.name}</p>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Click to select file</p>
+                      <p className="text-xs text-gray-400 mt-1">.xlsx, .xls, or .csv</p>
+                    </>
+                  )}
+                </label>
+              </div>
+
+              {importResult && (
+                <div className={`rounded-lg p-3 text-sm ${
+                  importResult.error
+                    ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+                    : 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
+                }`}>
+                  {importResult.error ? (
+                    <p>{importResult.error}</p>
+                  ) : (
+                    <>
+                      <p className="font-medium">{importResult.message}</p>
+                      {importResult.errors?.length > 0 && (
+                        <ul className="mt-2 text-xs space-y-0.5 text-yellow-700 dark:text-yellow-400">
+                          {importResult.errors.map((e, i) => <li key={i}>{e}</li>)}
+                        </ul>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                {importResult?.imported ? 'Done' : 'Cancel'}
+              </button>
+              {!importResult?.imported && (
+                <button
+                  onClick={handleImport}
+                  disabled={!importFile || importing}
+                  className="px-6 py-2 text-sm font-semibold text-white bg-green-700 hover:bg-green-800 rounded-lg disabled:opacity-50 transition-colors"
+                >
+                  {importing ? 'Importing...' : 'Import'}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
