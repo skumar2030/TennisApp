@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
       prisma.player.findMany({ orderBy: { name: 'asc' } }),
       prisma.userProfile.findMany({
         where: { status: 'approved' },
-        select: { id: true, fullName: true, utrSingles: true, ustaRating: true, email: true },
+        select: { id: true, fullName: true, utrSingles: true, ustaRating: true, email: true, phone: true },
         orderBy: { fullName: 'asc' },
       }),
     ])
@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
           id: `profile_${profile.id}`,
           name: profile.fullName,
           ustaRating: profile.utrSingles || profile.ustaRating || 'N/A',
-          phone: null,
+          phone: profile.phone || null,
           notes: null,
           createdByUserId: null,
           isRegistered: true,
