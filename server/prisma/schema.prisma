@@ -42,13 +42,16 @@ model Match {
 model MatchPlayer {
   id       Int    @id @default(autoincrement())
   matchId  Int
-  playerId Int?   // nullable for TBD opponents
-  team     Int    // 1 or 2
-  role     String // "player1" | "player2"
-  tbdName  String? // optional name for TBD opponents
+  playerId Int?
+  team     Int
+  role     String
+  tbdName  String?
 
   match  Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
   player Player? @relation(fields: [playerId], references: [id])
+
+  @@index([matchId])
+  @@index([playerId])
 }
 
 model Score {
@@ -60,6 +63,8 @@ model Score {
   tiebreak   String?
 
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
 }
 
 model Expense {
@@ -76,6 +81,10 @@ model Expense {
   paidBy  Player        @relation("PaidBy", fields: [paidById], references: [id])
   match   Match?        @relation(fields: [matchId], references: [id])
   splits  ExpenseSplit[]
+
+  @@index([paidById])
+  @@index([matchId])
+  @@index([createdByUserId])
 }
 
 model ExpenseSplit {
@@ -86,6 +95,9 @@ model ExpenseSplit {
 
   expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
   player  Player  @relation(fields: [playerId], references: [id])
+
+  @@index([expenseId])
+  @@index([playerId])
 }
 
 model Point {
@@ -106,6 +118,8 @@ model Point {
   createdAt   DateTime @default(now())
 
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
 }
 
 model CollegeList {
@@ -135,6 +149,8 @@ model CollegeList {
   notes            String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model UserProfile {
@@ -181,4 +197,6 @@ model MatchComment {
   createdAt DateTime @default(now())
 
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
 }

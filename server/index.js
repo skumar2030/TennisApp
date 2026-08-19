@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const prisma = require('./prisma/client');
 
 const playersRouter = require('./routes/players');
 const matchesRouter = require('./routes/matches');
@@ -35,10 +36,33 @@ app.use('/api/wordle', wordleRouter);
 app.use('/api/colleges', collegesRouter);
 app.use('/api/user-profiles', userProfilesRouter);
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+app.get('/api/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', db: 'connected' });
+  } catch {
+    res.status(503).json({ status: 'error', db: 'disconnected' });
+  }
 });
 
-app.listen(PORT, () => {
-  console.log(`TennisApp server running on http://localhost:${PORT}`);
+const server = app.listen(PORT, async () => {
+  try {
+    await prisma.$connect();
+    console.log(`TennisApp server running on http://localhost:${PORT} — DB connected`);
+  } catch (err) {
+    console.error('Failed to connect to database:', err.message);
+  }
+});
+
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down...');
+  server.close();
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  server.close();
+  await prisma.$disconnect();
+  process.exit(0);
 });
