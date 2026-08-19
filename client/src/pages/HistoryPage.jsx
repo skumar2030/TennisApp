@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import axios from 'axios'
 
 function formatDateTime(dt) {
@@ -251,6 +252,12 @@ export default function HistoryPage() {
                       {m.matchType}
                     </span>
                     <WinLossBadge match={m} filterPlayerId={filters.playerId} players={players} />
+                    <Link
+                      to={`/history/${m.id}/stats`}
+                      className="text-xs text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 font-medium"
+                    >
+                      View Stats &rarr;
+                    </Link>
                   </div>
                 </div>
               </div>

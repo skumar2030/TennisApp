@@ -12,6 +12,7 @@ const quizRouter = require('./routes/quiz');
 const wordleRouter = require('./routes/wordle');
 const collegesRouter = require('./routes/colleges');
 const userProfilesRouter = require('./routes/userProfiles');
+const performanceRouter = require('./routes/performance');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,6 +36,7 @@ app.use('/api/quiz', quizRouter);
 app.use('/api/wordle', wordleRouter);
 app.use('/api/colleges', collegesRouter);
 app.use('/api/user-profiles', userProfilesRouter);
+app.use('/api/performance', performanceRouter);
 
 app.get('/api/health', async (req, res) => {
   try {
